@@ -13,7 +13,7 @@ const config = {
 
   kit: {
     adapter: adapter(),
-    files: { lib: 'src/lib', assets: 'src/assets' },
+    files: { lib: 'src/lib', assets: 'static' },
 
     // hydrate the <div id="svelte"> element in src/app.html
     target: '#svelte'
