@@ -1,11 +1,14 @@
 export const ssr = false;
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { ethers } from 'ethers';
 import WalletConnectProvider from '@walletconnect/ethereum-provider/dist/umd/index.min.js';
+import { browser } from '$app/env';
 
+const infuraId = "YOUR_INFURA_ID";
 const chainId = 1;
 export const provider = writable(ethers.providers.getDefaultProvider());
 export const walletAddress = writable(undefined);
+
 
 provider.subscribe((_provider: any) => {
   _provider.getNetwork().then(async (network: any) => {
@@ -43,6 +46,12 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
           .getAddress()
           .then((address: string) => {
             walletAddress.set(address);
+            if (get(connected) && sessionStorage['connectType'] === 'walletconnect') {
+              const providerInstance = new WalletConnectProvider({ infuraId });
+              providerInstance.disconnect();
+            };
+            connected.set(true);
+            sessionStorage['connectType'] = 'metamask';
             resolve(true);
           });
       });
@@ -54,10 +63,8 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
 
 export const connectWalletConnect = () => new Promise(async (resolve, reject) => {
   try {
-    const providerInstance = new WalletConnectProvider({
-      infuraId: "YOUR_INFURA_ID", // Required
-    });
-    const _provider = await providerInstance.enable();
+    const providerInstance = new WalletConnectProvider({ infuraId });
+    await providerInstance.enable();
     const walletConnectProvider = new ethers.providers.Web3Provider(providerInstance);
     provider.set(walletConnectProvider);
     walletConnectProvider
@@ -65,9 +72,32 @@ export const connectWalletConnect = () => new Promise(async (resolve, reject) =>
       .getAddress()
       .then((address: string) => {
         walletAddress.set(address);
+        connected.set(true);
+        sessionStorage['connectType'] = 'walletconnect';
         resolve(true);
       });
   } catch (error) {
     reject(error)
   }
 });
+
+let _connected = false;
+
+if (browser) {
+  _connected = JSON.parse(sessionStorage.getItem('connected')) || false;
+  if (_connected && sessionStorage.getItem('connectType') === 'metamask') {
+    if (!window['ethereum'].isConnected()) _connected = false;
+    if (_connected) connectMetamask();
+  }
+  if (_connected && sessionStorage.getItem('connectType') === 'walletconnect') {
+    const providerInstance = new WalletConnectProvider({ infuraId });
+    if (!providerInstance.connected) _connected = false;
+    if (_connected) connectWalletConnect();
+  }
+}
+
+export const connected = writable(_connected || false);
+connected.subscribe((value) => {
+  if (browser) sessionStorage['connected'] = JSON.stringify(value)
+})
+
