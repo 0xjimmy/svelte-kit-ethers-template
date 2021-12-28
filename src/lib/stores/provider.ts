@@ -10,28 +10,25 @@ export const walletAddress = writable(undefined);
 provider.subscribe((_provider: any) => {
   _provider.getNetwork().then(async (network: any) => {
     if (network.chainId !== chainId) {
-      try {
-        _provider.jsonRpcFetchFunc('wallet_switchEthereumChain', [
-          { chainId: `0x${chainId.toString(16)}` }
-        ]);
-      } catch (error) {
-        if (error.code === 4902)
-          try {
-            _provider.jsonRpcFetchFunc('wallet_addEthereumChain', [
-              {
-                chainId: `0x${chainId.toString(16)}`,
-                chainName: 'Ethereum Mainnet',
-                nativeCurrency: 'ETH',
-                rpcUrls: ['https://localhost:8545/'], // Replace with your own node URL
-                blockExplorerUrls: ['https://etherscan.com']
-              }
-            ]);
-          } catch (error) {
-            console.log('Error Setting Network', error);
-          }
-      }
+      _provider.jsonRpcFetchFunc('wallet_switchEthereumChain', [
+        { chainId: `0x${chainId.toString(16)}` }
+      ]).catch(() => {
+        try {
+          _provider.jsonRpcFetchFunc('wallet_addEthereumChain', [
+            {
+              chainId: `0x${chainId.toString(16)}`,
+              chainName: 'Ethereum Dev',
+              nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['http://localhost:8545'], // Replace with your own node URL
+              blockExplorerUrls: ['https://etherscan.com']
+            }
+          ]);
+        } catch (error) {
+          console.log('Error Setting Network', error);
+        }
+      });
     }
-  });
+  })
 });
 
 export const connectMetamask = () => new Promise((resolve, reject) => {
@@ -55,11 +52,10 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
   }
 });
 
-
 export const connectWalletConnect = () => new Promise(async (resolve, reject) => {
   try {
     const providerInstance = new WalletConnectProvider({
-      infuraId: "27e484dcd9e3efcfd25a83a78777cdf1", // Required
+      infuraId: "YOUR_INFURA_ID", // Required
     });
     const _provider = await providerInstance.enable();
     const walletConnectProvider = new ethers.providers.Web3Provider(providerInstance);
