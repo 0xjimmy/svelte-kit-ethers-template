@@ -9,7 +9,6 @@ const chainId = 1;
 export const provider = writable(ethers.providers.getDefaultProvider());
 export const walletAddress = writable(undefined);
 
-
 provider.subscribe((_provider: any) => {
   _provider.getNetwork().then(async (network: any) => {
     if (network.chainId !== chainId) {
@@ -86,7 +85,7 @@ let _connected = false;
 if (browser) {
   _connected = JSON.parse(sessionStorage.getItem('connected')) || false;
   if (_connected && sessionStorage.getItem('connectType') === 'metamask') {
-    if (!window['ethereum'].isConnected()) _connected = false;
+    if (!window['ethereum'].selectedAddress) _connected = false;
     if (_connected) connectMetamask();
   }
   if (_connected && sessionStorage.getItem('connectType') === 'walletconnect') {
@@ -96,8 +95,14 @@ if (browser) {
   }
 }
 
-export const connected = writable(_connected || false);
+export const connected = writable(false);
 connected.subscribe((value) => {
   if (browser) sessionStorage['connected'] = JSON.stringify(value)
 })
+
+export const disconnect = () => {
+  connected.set(false);
+  walletAddress.set(undefined);
+  provider.set(ethers.providers.getDefaultProvider());
+}
 
