@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatEther } from 'ethers/lib/utils';
 	import {
 		connected,
 		connectMetamask,
@@ -7,12 +8,11 @@
 		walletAddress
 	} from '$lib/stores/provider';
 	import { state } from '$lib/stores/state';
-	import { formatEther } from 'ethers/lib/utils';
+	import State from '$lib/state/State.svelte';
+	import { Trigger } from '$lib/state/triggers';
 </script>
 
 <main class="flex flex-col p-10 w-screen h-screen items-center gap-5 font-mono">
-	<h1 class="text-5xl text-black font-bold">Svelte Ethers Boilerplate</h1>
-
 	<section class="flex flex-col p-10 items-start gap-5 border-2 rounded-xl">
 		<h1 class="text-2xl text-black font-bold">Wallet and $provider</h1>
 		<h2 class="text-xl text-black font-semibold">
@@ -40,8 +40,15 @@
 		{/if}
 	</section>
 	<section class="flex flex-col p-10 items-start gap-5 border-2 rounded-xl">
-		<h1 class="text-2xl text-black font-bold">Watch Network and Contract state</h1>
-		<p>Watch network states only when needed in an optimized way</p>
+		<h1 class="text-2xl text-black font-bold">Scope network state per component</h1>
+		<p>Don't update data when it is not needed.</p>
+		<a href="/" class="bg-black text-white p-2 rounded-xl">back to /</a>
+		<State name="someData" options={{ trigger: Trigger.BLOCK, input: () => 'Static Return' }} />
+		<h2 class="text-xl text-black font-semibold">
+			$state.someData: {$state.someData}
+		</h2>
+
+		<hr class="m-3 border-2 w-full" />
 		<p>
 			Configure global state in <span class="p-1 rounded text-gray-600 bg-gray-200"
 				>src/lib/globalState.ts</span
@@ -67,7 +74,5 @@
 			$state.transferEventSender: {$state.transferEventSender}<br />
 			$state.transferEventSenderBalance: {formatEther($state.transferEventSenderBalance)}
 		</h2>
-		<p class="mt-3 -mb-3">Calls and events can be active only when specific components are alive</p>
-		<a href="/scoped" class="bg-black text-white p-2 rounded-xl">Go to /scoped</a>
 	</section>
 </main>
