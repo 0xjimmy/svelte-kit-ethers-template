@@ -1,12 +1,13 @@
 export const ssr = false;
 import { get, writable } from 'svelte/store';
-import { ethers } from 'ethers';
+import { ethers, providers } from 'ethers';
 import WalletConnectProvider from '@walletconnect/ethereum-provider/dist/umd/index.min.js';
 import { browser } from '$app/env';
+import { BLOCK_EXPLORER_URL, CHAIN_ID, CHAIN_NAME, NATIVE_CURRENCY, RPC_URL } from '$lib/config';
 
-const infuraId = "YOUR_INFURA_ID";
-const chainId = 1;
-export const provider = writable(ethers.providers.getDefaultProvider());
+const chainId = CHAIN_ID ?? 1;
+export const defaultProvider = RPC_URL ? new providers.JsonRpcProvider(RPC_URL) : providers.getDefaultProvider();
+export const provider = writable(defaultProvider);
 export const walletAddress = writable(undefined);
 
 provider.subscribe((_provider: any) => {
@@ -19,10 +20,10 @@ provider.subscribe((_provider: any) => {
           _provider.jsonRpcFetchFunc('wallet_addEthereumChain', [
             {
               chainId: `0x${chainId.toString(16)}`,
-              chainName: 'Ethereum Dev',
-              nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-              rpcUrls: ['http://localhost:8545'], // Replace with your own node URL
-              blockExplorerUrls: ['https://etherscan.com']
+              chainName: CHAIN_NAME,
+              nativeCurrency: NATIVE_CURRENCY,
+              rpcUrls: [RPC_URL],
+              blockExplorerUrls: [BLOCK_EXPLORER_URL]
             }
           ]);
         } catch (error) {
@@ -46,7 +47,7 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
           .then((address: string) => {
             walletAddress.set(address);
             if (get(connected) && sessionStorage['connectType'] === 'walletconnect') {
-              const providerInstance = new WalletConnectProvider({ infuraId });
+              const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
               providerInstance.disconnect();
             };
             connected.set(true);
@@ -62,7 +63,7 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
 
 export const connectWalletConnect = () => new Promise(async (resolve, reject) => {
   try {
-    const providerInstance = new WalletConnectProvider({ infuraId });
+    const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
     await providerInstance.enable();
     const walletConnectProvider = new ethers.providers.Web3Provider(providerInstance);
     provider.set(walletConnectProvider);
@@ -89,7 +90,7 @@ if (browser) {
     if (_connected) connectMetamask();
   }
   if (_connected && sessionStorage.getItem('connectType') === 'walletconnect') {
-    const providerInstance = new WalletConnectProvider({ infuraId });
+    const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
     if (!providerInstance.connected) _connected = false;
     if (_connected) connectWalletConnect();
   }

@@ -6,25 +6,19 @@
 ![Typescript|200](https://www.npmjs.com/npm-avatar/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdmF0YXJVUkwiOiJodHRwczovL3MuZ3JhdmF0YXIuY29tL2F2YXRhci8zZTJiMzQyNjE2ODIyZjhlYWJjOWRkMzkzODQwZGI0YT9zaXplPTEwMCZkZWZhdWx0PXJldHJvIn0.iAUcZWWy4VL_-3PJlivtUwiUiSod4tyaj8h9sbcfAac 'Typescript')
 
 
-Provides Svelte Kit skeleton with Typescript, TailwindCSS and ethers provider store with Metamask and WalletConnect connection methods set up.
+## Basic Setup
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte);
-
-## Creating a project
-
-Fork this repo 
-
-Once you've created a project and installed dependencies with `yarn install` (or `pnpm install` or `npm install`), start a development server:
+Install dependencies
+```bash
+yarn
+```
+Start development server
 
 ```bash
 yarn dev
-
-# or start the server and open the app in a new browser tab
-yarn dev -- --open
 ```
 
-## Building
-
+**Building**
 Before creating a production version of your app, install an [adapter](https://kit.svelte.dev/docs#adapters) for your target environment. Then:
 
 ```bash
@@ -32,3 +26,10 @@ yarn build
 ```
 
 > You can preview the built app with `npm run preview`, regardless of whether you installed an adapter. This should _not_ be used to serve your app in production.
+
+## Config
+
+For you can configure 1 network, multi-network support will be developed soon
+
+Edit the config file `./src/lib/config.ts` to set network information.
+If no RPC endpoint is provided a public endpoint will be used via `ethers.providers.getDefaultProvider()`, this may impact performance so it is recommended to provide your own endpoint to avoid ratelimits.

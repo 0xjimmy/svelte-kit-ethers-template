@@ -6,10 +6,10 @@ import { globalState } from '$lib/globalState';
 import { Trigger } from '$lib/state/triggers';
 import type { DataSync } from '$lib/state/triggers';
 import { provider } from '$lib/stores/provider';
-import { MULTICALL_ADDRESS } from '$lib/state/presets';
 import multicallABI from '$lib/abis/Multicall2.json';
+import { MULTICALL2_ADDRESS } from '$lib/config';
 
-const multicall = new Contract(MULTICALL_ADDRESS, multicallABI, get(provider));
+const multicall = new Contract(MULTICALL2_ADDRESS, multicallABI, get(provider));
 export const state = writable<{ [key: string]: any }>({});
 
 const globalBlockSync: { calls: Array<{ key: string, value: DataSync }>, static: Array<{ key: string, value: DataSync }> } = { calls: [], static: [] };

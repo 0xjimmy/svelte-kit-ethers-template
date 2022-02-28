@@ -4,18 +4,17 @@ import { Trigger } from '$lib/state/triggers';
 import type { DataSync, ContractCall } from '$lib/state/triggers';
 import multicallABI from '$lib/abis/Multicall2.json';
 import { utils } from 'ethers';
+import { MULTICALL2_ADDRESS } from '$lib/config';
 
 export const blockHeight: DataSync = {
   trigger: Trigger.BLOCK,
   input: (blockHeight: number) => blockHeight
 }
 
-export const MULTICALL_ADDRESS = '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696';
-
 const IMulticall = new Interface(multicallABI);
 
 export const balanceCall: ContractCall = {
-  target: MULTICALL_ADDRESS,
+  target: MULTICALL2_ADDRESS,
   interface: IMulticall,
   selector: 'getEthBalance'
 }
