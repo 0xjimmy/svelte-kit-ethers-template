@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "svelte-kit dev",
-    "build": "svelte-kit build",
+    "build": "node --experimental-specifier-resolution=node ./node_modules/@sveltejs/kit/svelte-kit.js build ",
     "package": "svelte-kit package",
     "preview": "svelte-kit preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",

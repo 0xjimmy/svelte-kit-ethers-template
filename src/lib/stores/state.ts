@@ -1,6 +1,6 @@
 export const ssr = false;
 import { get, writable } from 'svelte/store';
-import { Contract } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import type { BytesLike } from 'ethers'
 import { globalState } from '$lib/globalState';
 import { Trigger } from '$lib/state/triggers';
@@ -32,14 +32,18 @@ export const addScopedSync = (name: string, options: DataSync) => {
       scopedBlockSync.eventListener = (blockHeight) => {
         if (scopedBlockSync.calls.length > 0) {
           const callData = scopedBlockSync.calls.map(({ value }) => Object({ target: value.call.target, callData: value.call.interface.encodeFunctionData(value.call.selector, value.input(blockHeight)) }))
-          multicall.callStatic.tryAggregate(false, callData).then((results: Array<{ success: boolean, returnData: BytesLike }>) => results.map((result, index) => {
-            if (result.success) {
-              state.update(state => {
-                state[scopedBlockSync.calls[index].key] = scopedBlockSync.calls[index].value.call.interface.decodeFunctionResult(scopedBlockSync.calls[index].value.call.selector, result.returnData)[0];
-                return state;
-              });
+          multicall.callStatic.tryBlockAndAggregate(false, callData).then((results: { blockNumber: BigNumber, returnData: { success: boolean, returnData: BytesLike }[] }) => {
+            if (results.blockNumber.gte(blockHeight)) {
+              results.returnData.map((result, index) => {
+                if (result.success) {
+                  state.update(state => {
+                    state[scopedBlockSync.calls[index].key] = scopedBlockSync.calls[index].value.call.interface.decodeFunctionResult(scopedBlockSync.calls[index].value.call.selector, result.returnData)[0];
+                    return state;
+                  });
+                }
+              })
             }
-          }))
+          })
         }
         scopedBlockSync.static.forEach(({ key, value }) => {
           state.update(state => {
@@ -182,14 +186,20 @@ if (globalBlockSync.static.length > 0 || globalBlockSync.calls.length > 0) {
     if (globalBlockSync.calls.length > 0 || scopedBlockSync.calls.length > 0) {
       const matchingCalls = [...globalBlockSync.calls, ...scopedBlockSync.calls];
       const callData = matchingCalls.map(({ value }) => Object({ target: value.call.target, callData: value.call.interface.encodeFunctionData(value.call.selector, value.input(blockHeight)) }))
-      multicall.callStatic.tryAggregate(false, callData).then((results: Array<{ success: boolean, returnData: BytesLike }>) => results.map((result, index) => {
-        if (result.success) {
-          state.update(state => {
-            state[matchingCalls[index].key] = matchingCalls[index].value.call.interface.decodeFunctionResult(matchingCalls[index].value.call.selector, result.returnData)[0];
-            return state;
-          });
+      multicall.callStatic.tryBlockAndAggregate(false, callData).then((results: { blockNumber: BigNumber, returnData: { success: boolean, returnData: BytesLike }[] }) => {
+        if (results.blockNumber.gte(blockHeight)) {
+          results.returnData.map((result, index) => {
+            if (results.blockNumber.gte(blockHeight)) {
+              if (result.success) {
+                state.update(state => {
+                  state[matchingCalls[index].key] = matchingCalls[index].value.call.interface.decodeFunctionResult(matchingCalls[index].value.call.selector, result.returnData)[0];
+                  return state;
+                });
+              }
+            }
+          })
         }
-      }))
+      })
     }
     [...globalBlockSync.static, ...scopedBlockSync.static].forEach(({ key, value }) => {
       state.update(state => {
