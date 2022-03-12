@@ -36,13 +36,13 @@ Methods to connect wallets
 Stores for the connection information are also provided
 ```ts
 import {
-		accountChainId, // { chainId: number, supportedNetwork: boolean } 
-    // - supportedNetwork is if you have provided configuration options for this network 
-
-   accountProvider, // EIP-1193 compliant provider object https://eips.ethereum.org/EIPS/eip-1193.
-   // Generally used with ethers.providers.Web3Provider($accountProvider) 
-
-		connected,
-		walletAddress
+    accountChainId,
+    accountProvider,
+    connected,
+    walletAddress
 } from '$lib/stores/provider'
 ```
+* `accountChainId` -  `{ chainId: number, supportedNetwork: boolean } ` supportedNetwork is `true` if you have provided configuration options for this network 
+* `accountProvider` - EIP-1193 compliant provider object https://eips.ethereum.org/EIPS/eip-1193. Generally used with ethers.providers.Web3Provider($accountProvider)
+* `connected` - boolean
+* `walletAddress` - Defaults to 0x0000000000000000000000000000000000000000 if not connected
