@@ -1,60 +1,71 @@
 export const ssr = false;
-import { get, writable } from 'svelte/store';
-import { ethers, providers } from 'ethers';
+import { derived, get, writable } from 'svelte/store';
+import { BigNumber, constants, ethers, providers } from 'ethers';
 import WalletConnectProvider from '@walletconnect/ethereum-provider/dist/umd/index.min.js';
 import { browser } from '$app/env';
-import { BLOCK_EXPLORER_URL, CHAIN_ID, CHAIN_NAME, NATIVE_CURRENCY, RPC_URL } from '$lib/config';
+import { NETWORKS } from '$lib/config';
 
-const chainId = CHAIN_ID ?? 1;
-export const defaultProvider = RPC_URL ? new providers.JsonRpcProvider(RPC_URL) : providers.getDefaultProvider();
-export const provider = writable(defaultProvider);
-export const walletAddress = writable(undefined);
+export const networkProviders: { [chainId: string]: providers.JsonRpcProvider } = NETWORKS.reduce((networks, network) => {
+  return { ...networks, [network.chainId]: new providers.JsonRpcProvider(network.rpcUrl) }
+}, {});
 
-provider.subscribe((_provider: any) => {
-  _provider.getNetwork().then(async (network: any) => {
-    if (network.chainId !== chainId) {
-      _provider.jsonRpcFetchFunc('wallet_switchEthereumChain', [
-        { chainId: `0x${chainId.toString(16)}` }
-      ]).catch(() => {
-        try {
-          _provider.jsonRpcFetchFunc('wallet_addEthereumChain', [
-            {
-              chainId: `0x${chainId.toString(16)}`,
-              chainName: CHAIN_NAME,
-              nativeCurrency: NATIVE_CURRENCY,
-              rpcUrls: [RPC_URL],
-              blockExplorerUrls: [BLOCK_EXPLORER_URL]
-            }
-          ]);
-        } catch (error) {
-          console.log('Error Setting Network', error);
-        }
-      });
-    }
-  })
-});
+export const selectedNetworkIndex = writable<number>(0);
+
+export const accountProvider = writable(undefined);
+export const accountChainId = writable({ chainId: NETWORKS[get(selectedNetworkIndex)].chainId, supportedNetwork: true });
+export const connected = derived(accountProvider, ($accountProvider) => $accountProvider ? true : false);
+export const walletAddress = writable(constants.AddressZero);
+
+let disconnectListener, accountsChangedListener, chainChangedListener;
+
+// Connect With injected wallet and WalletConnect
 
 export const connectMetamask = () => new Promise((resolve, reject) => {
   if (!window['ethereum']) reject('No injected provider found');
   else {
     try {
-      window['ethereum'].request({ method: 'eth_requestAccounts' }).then(() => {
-        const injectedProvider = new ethers.providers.Web3Provider(window['ethereum']);
-        provider.set(injectedProvider);
-        injectedProvider
-          .getSigner()
-          .getAddress()
-          .then((address: string) => {
-            walletAddress.set(address);
-            if (get(connected) && sessionStorage['connectType'] === 'walletconnect') {
-              const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
-              providerInstance.disconnect();
-            };
-            connected.set(true);
-            sessionStorage['connectType'] = 'metamask';
-            resolve(true);
-          });
+      window['ethereum'].request({ method: 'eth_requestAccounts' }).then((accounts: string[]) => {
+        if (accounts.length > 0) {
+          accountProvider.update(provider => {
+            if (provider) {
+              get(accountProvider).removeListener('accountsChanged', accountsChangedListener);
+              get(accountProvider).removeListener('chainChanged', chainChangedListener);
+              get(accountProvider).removeListener('disconnect', disconnectListener);
+            }
+            return window['ethereum'];
+          })
+          sessionStorage.setItem('connectType', 'metamask');
+          disconnectListener = () => {
+            get(accountProvider).removeListener('accountsChanged', accountsChangedListener);
+            get(accountProvider).removeListener('chainChanged', chainChangedListener);
+            get(accountProvider).removeListener('disconnect', disconnectListener);
+            accountProvider.set(undefined);
+            walletAddress.set(constants.AddressZero);
+          }
+          get(accountProvider).on('disconnect', disconnectListener);
+          const chainId = BigNumber.from(get(accountProvider).chainId).toNumber();
+          const supportedNetwork: boolean = NETWORKS.filter(network => network.chainId === chainId).length > 0;
+          if (supportedNetwork) selectedNetworkIndex.set(NETWORKS.findIndex(network => network.chainId === chainId));
+          accountChainId.set({ chainId, supportedNetwork });
+          walletAddress.set(accounts[0]);
+          accountsChangedListener = (accounts: string[]) => {
+            if (accounts.length > 0) walletAddress.set(accounts[0]);
+            else {
+              walletAddress.set(constants.AddressZero);
+              accountProvider.set(undefined);
+            }
+          }
+          get(accountProvider).on('accountsChanged', accountsChangedListener);
+          chainChangedListener = (chainIdHex: string) => {
+            const chainId = BigNumber.from(chainIdHex).toNumber();
+            const supportedNetwork: boolean = NETWORKS.filter(network => network.chainId === chainId).length > 0;
+            if (supportedNetwork) selectedNetworkIndex.set(NETWORKS.findIndex(network => network.chainId === chainId));
+            accountChainId.set({ chainId, supportedNetwork });
+          }
+          get(accountProvider).on('chainChanged', chainChangedListener);
+        }
       });
+      resolve(true);
     } catch (error) {
       reject(error);
     }
@@ -63,47 +74,76 @@ export const connectMetamask = () => new Promise((resolve, reject) => {
 
 export const connectWalletConnect = () => new Promise(async (resolve, reject) => {
   try {
-    const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
-    await providerInstance.enable();
-    const walletConnectProvider = new ethers.providers.Web3Provider(providerInstance);
-    provider.set(walletConnectProvider);
-    walletConnectProvider
-      .getSigner()
-      .getAddress()
-      .then((address: string) => {
-        walletAddress.set(address);
-        connected.set(true);
-        sessionStorage['connectType'] = 'walletconnect';
-        resolve(true);
-      });
+    const providerInstance = new WalletConnectProvider({ rpc: NETWORKS.reduce((networks, network) => ({ ...networks, [network.chainId]: network.rpcUrl }), {}) });
+    providerInstance.request({ method: 'eth_requestAccounts' }).then((accounts: string[]) => {
+      if (accounts.length > 0) {
+        accountProvider.update(provider => {
+          if (provider) {
+            get(accountProvider).removeListener('accountsChanged', accountsChangedListener);
+            get(accountProvider).removeListener('chainChanged', chainChangedListener);
+            get(accountProvider).removeListener('disconnect', disconnectListener);
+          }
+          return providerInstance;
+        })
+        sessionStorage.setItem('connectType', 'walletconnect');
+        disconnectListener = () => {
+          get(accountProvider).removeListener('accountsChanged', accountsChangedListener);
+          get(accountProvider).removeListener('chainChanged', chainChangedListener);
+          get(accountProvider).removeListener('disconnect', disconnectListener);
+          accountProvider.set(undefined);
+          walletAddress.set(constants.AddressZero);
+        }
+        get(accountProvider).on('disconnect', disconnectListener);
+        const chainId = BigNumber.from(get(accountProvider).chainId).toNumber();
+        const supportedNetwork: boolean = NETWORKS.filter(network => network.chainId === chainId).length > 0;
+        if (supportedNetwork) selectedNetworkIndex.set(NETWORKS.findIndex(network => network.chainId === chainId));
+        accountChainId.set({ chainId, supportedNetwork });
+        walletAddress.set(accounts[0]);
+        accountsChangedListener = (accounts: string[]) => {
+          if (accounts.length > 0) walletAddress.set(accounts[0]);
+          else {
+            walletAddress.set(constants.AddressZero);
+            accountProvider.set(undefined);
+          }
+        }
+        get(accountProvider).on('accountsChanged', accountsChangedListener);
+        chainChangedListener = (chainIdHex: string) => {
+          const chainId = BigNumber.from(chainIdHex).toNumber();
+          const supportedNetwork: boolean = NETWORKS.filter(network => network.chainId === chainId).length > 0;
+          if (supportedNetwork) selectedNetworkIndex.set(NETWORKS.findIndex(network => network.chainId === chainId));
+          accountChainId.set({ chainId, supportedNetwork });
+        }
+        get(accountProvider).on('chainChanged', chainChangedListener);
+      }
+    });
+    resolve(true);
   } catch (error) {
     reject(error)
   }
 });
 
-let _connected = false;
+// Disconnect And Store connection between reloads
 
-if (browser) {
-  _connected = JSON.parse(sessionStorage.getItem('connected')) || false;
-  if (_connected && sessionStorage.getItem('connectType') === 'metamask') {
-    if (!window['ethereum'].selectedAddress) _connected = false;
-    if (_connected) connectMetamask();
+if (browser && JSON.parse(sessionStorage.getItem('connected'))) {
+  if (sessionStorage.getItem('connectType') === 'metamask') {
+    if (window['ethereum'].selectedAddress) connectMetamask();
   }
-  if (_connected && sessionStorage.getItem('connectType') === 'walletconnect') {
-    const providerInstance = new WalletConnectProvider({ rpc: { [chainId]: RPC_URL } });
-    if (!providerInstance.connected) _connected = false;
-    if (_connected) connectWalletConnect();
+  if (sessionStorage.getItem('connectType') === 'walletconnect') {
+    const providerInstance = new WalletConnectProvider({ rpc: NETWORKS.reduce((networks, network) => ({ ...networks, [network.chainId]: network.rpcUrl }), {}) });
+    if (providerInstance.connected) connectWalletConnect();
   }
 }
 
-export const connected = writable(false);
 connected.subscribe((value) => {
-  if (browser) sessionStorage['connected'] = JSON.stringify(value)
+  if (browser) sessionStorage.setItem('connected', JSON.stringify(value));
 })
 
 export const disconnect = () => {
-  connected.set(false);
-  walletAddress.set(undefined);
-  provider.set(ethers.providers.getDefaultProvider());
+  if (get(accountProvider)) {
+    get(accountProvider).removeListener('accountsChanged', accountsChangedListener);
+    get(accountProvider).removeListener('chainChanged', chainChangedListener);
+    get(accountProvider).removeListener('disconnect', disconnectListener);
+    accountProvider.set(undefined);
+    walletAddress.set(constants.AddressZero);
+  }
 }
-
