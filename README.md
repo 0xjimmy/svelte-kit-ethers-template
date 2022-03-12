@@ -43,6 +43,11 @@ import {
 } from '$lib/stores/provider'
 ```
 * `accountChainId` -  `{ chainId: number, supportedNetwork: boolean } ` supportedNetwork is `true` if you have provided configuration options for this network 
-* `accountProvider` - EIP-1193 compliant provider object https://eips.ethereum.org/EIPS/eip-1193. Generally used with ethers.providers.Web3Provider($accountProvider)
+* `accountProvider` -  [EIP-11933](https://eips.ethereum.org/EIPS/eip-1193) compliant provider object. Generally used with ethers.providers.Web3Provider($accountProvider)
 * `connected` - boolean
 * `walletAddress` - Defaults to 0x0000000000000000000000000000000000000000 if not connected
+
+### Contract State Syncing
+
+In `src/lib/globalState.ts` you can configure 'Syncs' per network, triggerValue is used when a `StateSync` has a EVENT or TIME trigger type.
+The triggerValue for a TIME StateSync is the number of ms between update intervals and the triggerValue for an EVENT StateSync is an ethers event ``EventFilter`` object [https://docs.ethers.io/v5/api/providers/types/#providers-EventFilter](https://docs.ethers.io/v5/api/providers/types/#providers-EventFilter)
