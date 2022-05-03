@@ -13,8 +13,8 @@
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "next",
-    "@sveltejs/kit": "next",
+    "@sveltejs/adapter-auto": "^1.0.0-next.40",
+    "@sveltejs/kit": "^1.0.0-next.324",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "autoprefixer": "^10.3.7",
@@ -35,6 +35,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@sveltejs/adapter-static": "^1.0.0-next.29",
     "@walletconnect/ethereum-provider": "^1.6.6",
     "ethers": "^5.5.2"
   }
