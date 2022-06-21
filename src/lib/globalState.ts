@@ -1,12 +1,13 @@
 export const ssr = false;
 import type { BigNumber } from 'ethers';
-import { Sync, Trigger } from '$lib/state/state'
+import { Sync, Trigger } from 'ether-state';
 import { IMulticall } from '$lib/state/contracts';
 import { balanceOnBlock } from "$lib/stores/state";
 import { NETWORKS } from '$lib/config';
+import { networkProviders } from '$lib/stores/provider';
 
 // Mainnet Syncs
-new Sync(NETWORKS[0], [
+new Sync([
   {
     trigger: Trigger.BLOCK,
     input: () => ['0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'],
@@ -17,4 +18,4 @@ new Sync(NETWORKS[0], [
       selector: 'getEthBalance'
     }
   }
-])
+], networkProviders[String(NETWORKS[0].chainId)])

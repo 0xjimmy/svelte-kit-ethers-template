@@ -49,5 +49,4 @@ import {
 
 ### Contract State Syncing
 
-In `src/lib/globalState.ts` you can configure 'Syncs' per network, triggerValue is used when a `StateSync` has a EVENT or TIME trigger type.
-The triggerValue for a TIME StateSync is the number of ms between update intervals and the triggerValue for an EVENT StateSync is an ethers event ``EventFilter`` object [https://docs.ethers.io/v5/api/providers/types/#providers-EventFilter](https://docs.ethers.io/v5/api/providers/types/#providers-EventFilter)
+In `src/lib/globalState.ts` is an example usage of [ether-state](https://github.com/decentralisedtech/ether-state) - A library for syncing the state of smart contracts in your frontend.
