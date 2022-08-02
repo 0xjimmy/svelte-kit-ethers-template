@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": ".svelte-kit",
     "moduleResolution": "node",
     "module": "es2020",
     "lib": [
@@ -40,5 +41,9 @@
     "src/**/*.js",
     "src/**/*.ts",
     "src/**/*.svelte"
+  ],
+  "exclude": [
+    "node_modules",
+    ".svelte-kit"
   ]
 }
