@@ -6,8 +6,7 @@ Install dependencies
 ```bash
 yarn
 ```
-Enter your own or a RPC provider endpoint for your project in the `rpcUrl` paramater of `./src/lib/config.ts` to make on-chain calls, and interact with Metamask, etc.
-
+Enter your own or a RPC provider endpoint for your project in the `rpcUrl` parameter of `./src/lib/config.ts` to make on-chain calls, and interact with Metamask, etc. Replace `ADD RPC PROVIDER HERE` with your RPC provider.
 ```js
 export const NETWORKS: Network[] = [
   {
