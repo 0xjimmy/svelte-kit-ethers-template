@@ -6,11 +6,21 @@ Install dependencies
 ```bash
 yarn
 ```
-Start development server
+Enter your own or a RPC provider endpoint for your project in the `rpcUrl` parameter of `./src/lib/config.ts` to make on-chain calls, and interact with Metamask, etc. Replace `ADD RPC PROVIDER HERE` with your RPC provider.
+```js
+export const NETWORKS: Network[] = [
+  {
+    chainId: 1,
+    rpcUrl: 'ADD RPC PROVIDER HERE', // Your RPC endpoint, add here
+...
+```
 
+Start development server
 ```bash
 yarn dev
 ```
+
+
 
 **Building**
 Before creating a production version of your app, install an [adapter](https://kit.svelte.dev/docs#adapters) for your target environment. Then:
@@ -27,6 +37,7 @@ After adding a list of networks in `./src/lib/config.ts`, you have access to eth
 ```ts
 import { networkProviders: { [chainId: string]: providers.JsonRpcProvider } } from '$lib/stores/provider'
 ```
+
 
 Methods to connect wallets
 * `connectMetamask` - Connect Metamask or other injected wallets
