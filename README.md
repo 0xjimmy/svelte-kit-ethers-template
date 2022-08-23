@@ -1,5 +1,8 @@
 # Svelte Kit Ethers Template
 
+**[Please use the real template maintained by DecentralisedTech found here.](https://github.com/DecentralisedTech/svelte-kit-ethers-template)**
+
+
 ## Basic Setup
 
 Install dependencies
