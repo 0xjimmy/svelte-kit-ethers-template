@@ -8,7 +8,7 @@ const config = {
   preprocess: preprocess({ postcss: true }),
 
   kit: {
-    trailingSlash: 'always',
+    //trailingSlash: 'always',
     adapter: adapter({
       // default options are shown. On some platforms
       // these options are set automatically — see below

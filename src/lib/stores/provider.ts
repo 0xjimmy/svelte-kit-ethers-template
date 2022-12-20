@@ -1,7 +1,8 @@
 export const ssr = false;
+// TODO: FIX TYPES
 import { derived, get, writable } from 'svelte/store';
 import { BigNumber, constants, providers } from 'ethers';
-// @ts-ignore
+
 import WalletConnectProvider from '@walletconnect/ethereum-provider/dist/umd/index.min.js';
 import { browser } from '$app/environment';
 import { NETWORKS } from '$lib/config';
