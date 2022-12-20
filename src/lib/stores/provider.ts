@@ -1,8 +1,9 @@
 export const ssr = false;
 import { derived, get, writable } from 'svelte/store';
-import { BigNumber, constants, ethers, providers } from 'ethers';
+import { BigNumber, constants, providers } from 'ethers';
+// @ts-ignore
 import WalletConnectProvider from '@walletconnect/ethereum-provider/dist/umd/index.min.js';
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 import { NETWORKS } from '$lib/config';
 
 export const networkProviders: { [chainId: string]: providers.JsonRpcProvider } = NETWORKS.reduce((networks, network) => {
